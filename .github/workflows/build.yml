@@ -28,7 +28,19 @@ jobs:
 
       - name: Build APK
         working-directory: src
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --continue 2>&1 | tee ../build.log
+
+      - name: Show errors
+        if: failure()
+        run: |
+          {
+            echo '## Build errors'
+            echo '```'
+            grep -E '^e: |^w: .*error|error:|What went wrong|Could not|Unresolved|Execution failed' -A2 build.log | grep -v '^\s*at ' | head -120
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish download link
         env:
